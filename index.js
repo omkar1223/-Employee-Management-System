@@ -70,12 +70,11 @@ async function getEmployeeDepartments(employeeId) {
     where: { employeeId },
   });
 
-  let departmentData = [];
+  let departmentData;
   for (let i = 0; i < empdepartment.length; i++) {
-    let depart = await department.findOne({
+    departmentData = await department.findOne({
       where: { id: empdepartment[i].departmentId },
     });
-    departmentData.push(depart);
   }
 
   return departmentData;
@@ -84,10 +83,9 @@ async function getEmployeeDepartments(employeeId) {
 async function getEmployeeRoles(employeeId) {
   const empRole = await employeeRole.findAll({ where: { employeeId } });
 
-  let roleData = [];
+  let roleData;
   for (let i = 0; i < empRole.length; i++) {
-    let rol = await role.findOne({ where: { id: empRole[i].roleId } });
-    roleData.push(rol);
+    roleData = await role.findOne({ where: { id: empRole[i].roleId } });
   }
   return roleData;
 }
@@ -97,9 +95,9 @@ async function getEmployeeDetails(employeeData) {
   const role = await getEmployeeRoles(employeeData.id);
 
   return {
-    employees: employeeData,
-    departments: department,
-    roles: role,
+    ...employeeData.dataValues,
+    department: department,
+    role: role,
   };
 }
 
@@ -114,7 +112,7 @@ app.get("/employees", async (req, res) => {
       employeeDetails.push(detailedData);
     }
 
-    return res.json(employeeDetails);
+    return res.json({ employees: employeeDetails });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -125,6 +123,17 @@ app.get("/departments", async (req, res) => {
     const response = await department.findAll();
 
     res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/employees/details/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  try {
+    const response = await employee.findOne({ where: { id } });
+    const empDetailed = await getEmployeeDetails(response);
+    res.status(200).json({ employee: empDetailed });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
