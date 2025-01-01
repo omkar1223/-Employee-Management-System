@@ -71,7 +71,7 @@ async function getEmployeeDepartments(employeeId) {
   });
 
   let departmentData = [];
-  for (i = 0; i < empdepartment.length; i++) {
+  for (let i = 0; i < empdepartment.length; i++) {
     let depart = await department.findOne({
       where: { id: empdepartment[i].departmentId },
     });
@@ -85,7 +85,7 @@ async function getEmployeeRoles(employeeId) {
   const empRole = await employeeRole.findAll({ where: { employeeId } });
 
   let roleData = [];
-  for (i = 0; i < empRole.length; i++) {
+  for (let i = 0; i < empRole.length; i++) {
     let rol = await role.findOne({ where: { id: empRole[i].roleId } });
     roleData.push(rol);
   }
@@ -104,16 +104,20 @@ async function getEmployeeDetails(employeeData) {
 }
 
 app.get("/employees", async (req, res) => {
-  const response = await employee.findAll();
+  try {
+    const response = await employee.findAll();
 
-  const employeeDetails = [];
+    const employeeDetails = [];
 
-  for (i = 0; i < response.length; i++) {
-    let detailedData = await getEmployeeDetails(response[i]);
-    employeeDetails.push(detailedData);
+    for (let i = 0; i < response.length; i++) {
+      let detailedData = await getEmployeeDetails(response[i]);
+      employeeDetails.push(detailedData);
+    }
+
+    return res.json(employeeDetails);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-
-  return employeeDetails;
 });
 
 app.get("/departments", async (req, res) => {
