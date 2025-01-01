@@ -70,22 +70,26 @@ async function getEmployeeDepartments(employeeId) {
     where: { employeeId },
   });
 
+  let departmentData = [];
   for (i = 0; i < empdepartment.length; i++) {
-    const department = await department.findOne({
+    let depart = await department.findOne({
       where: { id: empdepartment[i].departmentId },
     });
+    departmentData.push(depart);
   }
 
-  return department;
+  return departmentData;
 }
 
 async function getEmployeeRoles(employeeId) {
   const empRole = await employeeRole.findAll({ where: { employeeId } });
 
+  let roleData = [];
   for (i = 0; i < empRole.length; i++) {
-    const role = await role.findOne({ where: { id: empRole[i].roleId } });
+    let rol = await role.findOne({ where: { id: empRole[i].roleId } });
+    roleData.push(rol);
   }
-  return role;
+  return roleData;
 }
 
 async function getEmployeeDetails(employeeData) {
@@ -103,12 +107,13 @@ app.get("/employees", async (req, res) => {
   const response = await employee.findAll();
 
   const employeeDetails = [];
+
   for (i = 0; i < response.length; i++) {
-    const detailedData = await getEmployeeDetails(response);
+    let detailedData = await getEmployeeDetails(response[i]);
     employeeDetails.push(detailedData);
   }
 
-  res.status(200).json(employeeDetails);
+  return employeeDetails;
 });
 
 app.get("/departments", async (req, res) => {
