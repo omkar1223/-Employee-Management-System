@@ -65,14 +65,60 @@ app.get("/seed_db", async (req, res) => {
   return res.json({ message: "Database seeded!" });
 });
 
+async function getEmployeeDepartments(employeeId) {
+  const empdepartment = await employeeDepartment.findAll({
+    where: { employeeId },
+  });
+
+  for (i = 0; i < empdepartment.length; i++) {
+    const department = await department.findOne({
+      where: { id: empdepartment[i].departmentId },
+    });
+  }
+
+  return department;
+}
+
+async function getEmployeeRoles(employeeId) {
+  const empRole = await employeeRole.findAll({ where: { employeeId } });
+
+  for (i = 0; i < empRole.length; i++) {
+    const role = await role.findOne({ where: { id: empRole[i].roleId } });
+  }
+  return role;
+}
+
+async function getEmployeeDetails(employeeData) {
+  const department = await getEmployeeDepartments(employeeData.id);
+  const role = await getEmployeeRoles(employeeData.id);
+
+  return {
+    employees: employeeData,
+    departments: department,
+    roles: role,
+  };
+}
+
 app.get("/employees", async (req, res) => {
   const response = await employee.findAll();
-  res.status(200).json({ employees: response });
+
+  const employeeDetails = [];
+  for (i = 0; i < response.length; i++) {
+    const detailedData = await getEmployeeDetails(response);
+    employeeDetails.push(detailedData);
+  }
+
+  res.status(200).json(employeeDetails);
 });
 
 app.get("/departments", async (req, res) => {
-  const response = await department.findAll();
-  res.status(200).json({ departments: response });
+  try {
+    const response = await department.findAll();
+
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.listen(port, () => {
