@@ -139,6 +139,97 @@ app.get("/employees/details/:id", async (req, res) => {
   }
 });
 
+app.get("/roles", async (req, res) => {
+  const response = await role.findAll();
+  res.status(200).json({ roles: response });
+});
+
+app.get("/employees/department/:departmentId", async (req, res) => {
+  const departmentId = parseInt(req.params.departmentId);
+  try {
+    const response = await employeeDepartment.findAll({
+      where: { departmentId },
+    });
+
+    let detailedData = [];
+    for (let i = 0; i < response.length; i++) {
+      let data = await employee.findOne({
+        where: { id: response[i].employeeId },
+      });
+      let fetch = await getEmployeeDetails(data);
+      detailedData.push(fetch);
+    }
+
+    return res.status(200).json({ employees: detailedData });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/employees/role/:roleId", async (req, res) => {
+  const roleId = parseInt(req.params.roleId);
+  try {
+    const response = await employeeRole.findAll({ where: { roleId } });
+
+    let detailedData = [];
+    for (let i = 0; i < response.length; i++) {
+      let data = await employee.findOne({
+        where: { id: response[i].employeeId },
+      });
+      let fetch = await getEmployeeDetails(data);
+      detailedData.push(fetch);
+    }
+    res.status(200).json({ employees: detailedData });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/employees/sort-by-name", async (req, res) => {
+  const order = req.query.order;
+  try {
+    const response = await employee.findAll({ order: [["name", order]] });
+    let detailedDataSorted = [];
+    for (let i = 0; i < response.length; i++) {
+      let data = await getEmployeeDetails(response[i]);
+      detailedDataSorted.push(data);
+    }
+    res.status(200).json({ employees: detailedDataSorted });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+async function addEmpNewUser(newUser) {
+  const addNew = await employee.create({
+    name: newUser.name,
+    email: newUser.email,
+  });
+
+  await employeeDepartment.create({
+    employeeId: addNew.id,
+    departmentId: newUser.departmentId,
+  });
+
+  await employeeRole.create({
+    employeeId: addNew.id,
+    roleId: newUser.roleId,
+  });
+
+  return { message: "New User Added", addNew };
+}
+
+app.post("/employee/new", async (req, res) => {
+  const newUser = req.body;
+  try {
+    const response = await addEmpNewUser(newUser);
+    const detailedNewData = await getEmployeeDetails(response.addNew);
+    res.status(200).json(detailedNewData);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.listen(port, () => {
   console.log("Express server initialized");
 });
