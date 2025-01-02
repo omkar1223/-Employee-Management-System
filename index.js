@@ -230,6 +230,76 @@ app.post("/employee/new", async (req, res) => {
   }
 });
 
+async function updateData(updateNewData, id) {
+  const employ = await employee.findOne({ where: { id } });
+  if (!employ) {
+    return res
+      .status(404)
+      .json({ message: "no employe found for this id:" + id });
+  }
+
+  if (updateNewData.name) employ.name = updateNewData.name;
+  if (updateNewData.email) employ.email = updateNewData.email;
+
+  await employ.save();
+
+  if (updateNewData.departmentId) {
+    await employeeDepartment.destroy({
+      where: { employeeId: id },
+    });
+
+    await employeeDepartment.create({
+      employeeId: updateNewData.employeeId,
+      departmentId: updateNewData.departmentId,
+    });
+  }
+
+  if (updateNewData.roleId) {
+    await employeeRole.destroy({
+      where: {
+        employeeId: id,
+      },
+    });
+    await employeeRole.create({
+      employeeId: id,
+      roleId: updateNewData.roleId,
+    });
+  }
+  return employ;
+}
+
+app.post("/employees/update/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  const updateNewData = req.body;
+  try {
+    const empData = await updateData(updateNewData, id);
+    const detailedData = await getEmployeeDetails(empData);
+
+    res.status(200).json(detailedData);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+async function deleteEmployeeById(data) {
+  const deleteData = await employee.destroy({ where: { id: data.id } });
+  await employeeDepartment.destroy({ where: { employeeId: data.id } });
+  await employeeRole.destroy({ where: { employeeId: data.id } });
+
+  return { message: "Employee with ID " + data.id + " has been deleted." };
+}
+
+app.post("/employees/delete", async (req, res) => {
+  const data = req.body;
+  try {
+    const response = await deleteEmployeeById(data);
+
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.listen(port, () => {
   console.log("Express server initialized");
 });
